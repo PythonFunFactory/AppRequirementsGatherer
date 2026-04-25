@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - pdf_data:/app/static/pdfs
+      - db_data:/app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: sqlite:///./app.db
+      PDF_STORAGE_PATH: ./static/pdfs
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pdf_data:
+  db_data:
