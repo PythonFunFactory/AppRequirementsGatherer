@@ -1,5 +1,7 @@
 import json
-from fastapi import APIRouter, Depends, Query
+import os
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -51,7 +53,6 @@ def admin_get_session(
 ):
     session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
     if not session:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Session not found")
 
     tech_stack = None
@@ -76,6 +77,24 @@ def admin_get_session(
         ],
         "tech_stack": tech_stack,
     }
+
+
+@router.get("/sessions/{session_id}/pdf")
+def admin_download_pdf(
+    session_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+    if not session or not session.pdf:
+        raise HTTPException(status_code=404, detail="PDF not found")
+    if not os.path.exists(session.pdf.file_path):
+        raise HTTPException(status_code=404, detail="PDF file missing from disk")
+    return FileResponse(
+        session.pdf.file_path,
+        media_type="application/pdf",
+        filename=f"requirements-{session_id}.pdf",
+    )
 
 
 @router.get("/users", response_model=List[UserOut])

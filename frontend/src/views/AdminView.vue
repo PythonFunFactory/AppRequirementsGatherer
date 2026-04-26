@@ -68,9 +68,16 @@
             <h2 class="font-semibold truncate">{{ detail.title }}</h2>
             <p class="text-xs text-muted-foreground">Session #{{ detail.id }} · {{ detail.user?.email }}</p>
           </div>
-          <Button variant="ghost" size="icon" @click="detail = null">
-            <X class="w-4 h-4" />
-          </Button>
+          <div class="flex items-center gap-2 shrink-0 ml-3">
+            <a v-if="detail.has_pdf" :href="`/admin/sessions/${detail.id}/pdf`" target="_blank" download>
+              <Button variant="outline" size="sm" class="gap-1.5">
+                <Download class="w-4 h-4" /> PDF
+              </Button>
+            </a>
+            <Button variant="ghost" size="icon" @click="detail = null">
+              <X class="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
@@ -117,7 +124,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ChevronRight, X, Cpu, MessageSquare } from 'lucide-vue-next'
+import { ChevronRight, X, Cpu, MessageSquare, Download } from 'lucide-vue-next'
 import { adminApi, type Session } from '@/lib/api'
 import NavBar from '@/components/NavBar.vue'
 import Button from '@/components/ui/Button.vue'
@@ -158,7 +165,9 @@ async function openSession(id: number) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+  const d = new Date(iso.replace(' ', 'T'))
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 }
 </script>
 
