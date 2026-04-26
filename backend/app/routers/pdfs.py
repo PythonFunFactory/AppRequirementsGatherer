@@ -1,9 +1,10 @@
 import os
 import json
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..database import get_db
 from ..models import Session as SessionModel, Message, User, PdfRecord, SessionStatus
 from ..schemas.pdf import PdfOut
@@ -36,7 +37,6 @@ async def generate_pdf(
     tech_stack = requirements.pop("tech_stack_suggestions", {})
     file_path = await render_pdf(session_id, requirements, session.title)
 
-    # Upsert PDF record
     pdf_record = db.query(PdfRecord).filter(PdfRecord.session_id == session_id).first()
     if pdf_record:
         pdf_record.file_path = file_path
@@ -66,10 +66,27 @@ def download_pdf(
     ).first()
     if not session or not session.pdf:
         raise HTTPException(status_code=404, detail="PDF not found")
-    if not os.path.exists(session.pdf.file_path):
+
+    file_path = session.pdf.file_path
+
+    if file_path.startswith("s3://"):
+        import boto3
+        s3_key = file_path[len("s3://"):]
+        url = boto3.client("s3", region_name=settings.aws_region).generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": settings.aws_s3_bucket,
+                "Key": s3_key,
+                "ResponseContentDisposition": f"attachment; filename=requirements-{session_id}.pdf",
+            },
+            ExpiresIn=300,
+        )
+        return RedirectResponse(url)
+
+    if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="PDF file missing from disk")
     return FileResponse(
-        session.pdf.file_path,
+        file_path,
         media_type="application/pdf",
         filename=f"requirements-{session_id}.pdf",
     )

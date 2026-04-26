@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     admin_emails: str = ""
     frontend_url: str = "http://localhost:5173"
 
+    # AWS — leave blank for local dev (falls back to local filesystem / direct API)
+    aws_region: str = "us-east-1"
+    aws_s3_bucket: str = ""  # if set, PDFs are stored in S3
+
     @property
     def admin_email_list(self) -> List[str]:
         return [e.strip().lower() for e in self.admin_emails.split(",") if e.strip()]

@@ -213,6 +213,19 @@ async def render_pdf(session_id: int, requirements: dict, title: str) -> str:
         for q in open_qs:
             pdf.bullet(q)
 
+    if settings.aws_s3_bucket:
+        import tempfile, boto3
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp_path = tmp.name
+        pdf.output(tmp_path)
+        s3_key = f"pdfs/session_{session_id}.pdf"
+        boto3.client("s3", region_name=settings.aws_region).upload_file(
+            tmp_path, settings.aws_s3_bucket, s3_key,
+            ExtraArgs={"ContentType": "application/pdf"},
+        )
+        Path(tmp_path).unlink(missing_ok=True)
+        return f"s3://{s3_key}"
+
     output_dir = Path(settings.pdf_storage_path)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = str(output_dir / f"session_{session_id}.pdf")
