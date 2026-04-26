@@ -14,6 +14,11 @@
         </Button>
       </div>
 
+      <!-- Error banner -->
+      <div v-if="createError" class="mb-4 rounded-md bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+        {{ createError }}
+      </div>
+
       <!-- Loading -->
       <div v-if="sessions.loading" class="space-y-3">
         <div v-for="i in 3" :key="i" class="h-20 rounded-lg bg-muted animate-pulse" />
@@ -66,20 +71,28 @@ import Badge from '@/components/ui/Badge.vue'
 const sessions = useSessionsStore()
 const router = useRouter()
 const creating = ref(false)
+const createError = ref<string | null>(null)
 
 onMounted(() => sessions.loadSessions())
 
 async function newSession() {
   creating.value = true
+  createError.value = null
   try {
     const session = await sessions.createSession()
     router.push(`/sessions/${session.id}`)
+  } catch (e: any) {
+    createError.value = e?.message ?? 'Failed to create session. Please try again.'
   } finally {
     creating.value = false
   }
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+  // SQLite stores datetimes with a space separator; normalize to ISO 8601 for reliable parsing
+  const normalized = iso.replace(' ', 'T')
+  const d = new Date(normalized)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 }
 </script>
