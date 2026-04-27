@@ -1,5 +1,6 @@
 import json
 import os
+from json_repair import repair_json
 from pathlib import Path
 from typing import AsyncGenerator, List
 import anthropic
@@ -61,4 +62,7 @@ async def generate_requirements_json(messages: List[dict]) -> dict:
     if raw.startswith("```"):
         raw = raw.split("\n", 1)[1]
         raw = raw.rsplit("```", 1)[0]
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return json.loads(repair_json(raw))
