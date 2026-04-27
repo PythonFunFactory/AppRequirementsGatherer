@@ -5,11 +5,11 @@ services:
       - "8000:8000"
     volumes:
       - pdf_data:/app/static/pdfs
-      - db_data:/app
+      - db_data:/app/data
     env_file:
       - .env
     environment:
-      DATABASE_URL: sqlite:///./app.db
+      DATABASE_URL: sqlite:////app/data/app.db
       PDF_STORAGE_PATH: ./static/pdfs
     restart: unless-stopped
 

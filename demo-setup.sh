@@ -32,7 +32,7 @@ ANTHROPIC_API_KEY=${ANTHROPIC_KEY}
 SECRET_KEY=$(openssl rand -hex 32)
 ADMIN_EMAILS=admin@demo.local
 FRONTEND_URL=http://${PUBLIC_IP}
-DATABASE_URL=sqlite:///./app.db
+DATABASE_URL=sqlite:////app/data/app.db
 PDF_STORAGE_PATH=./static/pdfs
 EOF
 
